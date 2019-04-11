@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  ASI:
+    Type: String
+    MinLength: 3
+    MaxLength: 4
+    Description: "asi - must be lower-case, limit 4 characters"
+    AllowedPattern: "[a-z]*"
+  Environment:
+    Type: String
+    MinLength: 3
+    MaxLength: 7
+    Description: "environment (nonprod|dev|itg|cat|prod)"
+    AllowedValues:
+      - "nonprod"
+      - "dev"
+      - "itg"
+      - "cat"
+      - "prod"
+  Owner:
+    Type: String
+    Description: "email address of the the Owner of this stack"
+    Default: "admin@root.com"
+    AllowedPattern: "^[\\w-\\+]+(\\.[\\w]+)*@[\\w-]+(\\.[\\w]+)*(\\.[a-z]{2,})$"
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+Resources:
+  LambdaGatewayTestRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Path: /
+  LambdaGatewayTestFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: !Sub ${ASI} ${Environment} VPC gateway test lambda
+      FunctionName: !Sub ${ASI}-${Environment}-gateway-test-function
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt ["LambdaGatewayTestRole", "Arn"]
+      Runtime: python3.6
+      Timeout: 3
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        SubnetIds: !Ref Subnets
+      Code:
+        ZipFile: |
+          import boto3
+          from botocore.exceptions import ClientError
+          import urllib.request
+          import json
+
+          def http(event):
+              url = event['url']
+              response = urllib.request.urlopen(url)
+
+              return json.loads(response.read())
+
+          def lambda_handler(event, context):
+              response = http(event)
+              return response
+      Tags:
+        - Key: Name
+          Value: !Sub ${ASI}-${Environment}-gateway-test-function
+        - Key: Owner
+          Value: !Ref Owner
