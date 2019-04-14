@@ -13,8 +13,8 @@ Or, if you're using the lambda function:
 
 ```bash
 {
-  "url": "https://api.ipify.org?format=json",
-  "method": "GET"
+  "url": "https://foobahdobabar.execute-api.us-east-1.amazonaws.com/echo",
+  "method": "POST"
 }
 ```
 
