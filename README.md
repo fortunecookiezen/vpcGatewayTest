@@ -1,4 +1,7 @@
 # vpcGatewayTest
+
+$Id$
+
 Lambda function to test vpc connectitivity
 
 Original Lambda Author: John Pope
