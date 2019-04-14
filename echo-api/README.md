@@ -1,4 +1,4 @@
-# vpcGatewayTest
+# echo-api
 
 Api Gateway exposing a Lambda function at /echo that accepts a POST to provide an ip-echo endpoint for vpc connectitivity testing
 
