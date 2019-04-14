@@ -1,7 +1,5 @@
 # vpcGatewayTest
 
-$Id$
-
 Lambda function to test vpc connectitivity
 
 Original Lambda Author: John Pope
@@ -12,14 +10,15 @@ I forked this and then cut it down from John's original demo to just include htt
 
 Use with a test like:
 
-```
+```bash
 {
   "url": "https://api.ipify.org?format=json",
   "method": "GET"
 }
 ```
+
 The included CloudFormation will deploy the Lambda into a VPC and create the necessary IAM Role.
 
-ToDo: Include Lambda Test in cloudformation (is this even a thing?)
+ToDo: Include Lambda Test in cloudformation (Q: is this even a thing? A: nope, cloudformation does not support this. You will need to add the tests by hand through the console after deployment)
 
 --jim
