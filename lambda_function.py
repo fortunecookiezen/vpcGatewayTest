@@ -16,7 +16,7 @@ def http(event):
 def telnet(event):
     import telnetlib
 
-    HOST = event.get('host', 'towel.blinkenlights.nl')
+    HOST = event.get('host', None)
     PORT = event.get('port', None)
 
     try:
