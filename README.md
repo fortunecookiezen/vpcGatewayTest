@@ -11,7 +11,8 @@ Use with a test like:
 
 ```
 {
-  "url": "https://api.ipify.org?format=json"
+  "url": "https://api.ipify.org?format=json",
+  "method": "GET"
 }
 ```
 The included CloudFormation will deploy the Lambda into a VPC and create the necessary IAM Role.
