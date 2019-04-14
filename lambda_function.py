@@ -1,3 +1,4 @@
+# $Id$
 import boto3
 from botocore.exceptions import ClientError
 
@@ -7,8 +8,9 @@ import json
 
 def http(event):
     url = event['url']
-    response = urllib.request.urlopen(url)
-
+    m = event['method']
+    request = urllib.request.Request(url, method=m)
+    response = urllib.request.urlopen(request)
     return json.loads(response.read())
 
 def telnet(event):
