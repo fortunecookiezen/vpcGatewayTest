@@ -6,7 +6,7 @@ Use this with a test client such as `curl` or my vpcGatewayTest Lambda function.
 Use with a test like:
 
 ```bash
-curl --request POST curl --request POST https://foobahdobabar.execute-api.us-east-1.amazonaws.com/echo
+curl --request POST https://foobahdobabar.execute-api.us-east-1.amazonaws.com/echo
 ```
 
 Or, if you're using the lambda function:
