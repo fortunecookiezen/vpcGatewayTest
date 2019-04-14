@@ -9,6 +9,15 @@ Use with a test like:
 curl --request POST curl --request POST https://foobahdobabar.execute-api.us-east-1.amazonaws.com/echo
 ```
 
+Or, if you're using the lambda function:
+
+```bash
+{
+  "url": "https://api.ipify.org?format=json",
+  "method": "GET"
+}
+```
+
 which will return something like:
 
 ```bash
