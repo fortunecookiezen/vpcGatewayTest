@@ -33,13 +33,13 @@ Parameters:
       - PRIVATE
   vpcid:
     Type: AWS::EC2::VPC::Id
-    Description: "needed if apiType = PRIVATE"
+    Description: "required, used if apiType = PRIVATE"
   subnetid:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: "private subnets, needed if apiType = PRIVATE"
+    Description: "private subnets, required. Used if apiType = PRIVATE"
   securitygroupid:
     Type: List<AWS::EC2::SecurityGroup::Id>
-    Description: "needed if apiType = PRIVATE"
+    Description: "required, used if apiType = PRIVATE"
 
 Conditions:
   isPrivate:
