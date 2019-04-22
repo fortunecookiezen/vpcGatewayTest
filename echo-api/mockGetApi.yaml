@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+# $Id$
+Description: "regional api gateway with mock GET api returning statusCode 200"
+
+Parameters:
+  ASI:
+    Type: String
+    MinLength: 3
+    MaxLength: 4
+    Description: "asi - must be lower-case, limit 4 characters"
+    AllowedPattern: "[a-z]*"
+  Environment:
+    Type: String
+    MinLength: 3
+    MaxLength: 7
+    Description: "environment (nonprod|dev|itg|cat|prod)"
+    AllowedValues:
+      - "nonprod"
+      - "dev"
+      - "itg"
+      - "cat"
+      - "prod"
+  apiGatewayStageName:
+    Type: String
+    AllowedPattern: "^[a-z0-9]+$"
+    Default: "test"
+  apiType:
+    Type: String
+    Description: "Type of api gateway to deploy: (edge|regional|private)"
+    AllowedValues:
+      - EDGE
+      - REGIONAL
+      - PRIVATE
+  vpcid:
+    Type: AWS::EC2::VPC::Id
+    Description: "needed if apiType = PRIVATE"
+  subnetid:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: "private subnets, needed if apiType = PRIVATE"
+  securitygroupid:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: "needed if apiType = PRIVATE"
+
+Conditions:
+  isPrivate:
+    !Equals [!Ref apiType, "PRIVATE"]
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - 
+      Label:
+        default: "Environment Configuration"
+      Parameters:
+        - ASI
+        - Environment
+    -
+      Label:
+        default: "api configuration"
+      Parameters:
+        - apiGatewayStageName
+        - apiType
+    -
+      Label: 
+        default: "Network Configuration"
+      Parameters:
+        - vpcid
+        - subnetid
+        - securitygroupid
+
+Resources:
+  apiGateway:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      Name: !Sub "${Environment}-${ASI}-${apiGatewayStageName}"
+      Description: "VPC echo API"
+      EndpointConfiguration:
+        Types:
+          - !Ref apiType
+      Policy:
+        Version: 2012-10-17
+        Statement:
+           - Effect: Allow
+             Principal: '*'
+             Action: execute-api:Invoke
+             Resource: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*"
+
+  ApiServiceEndpoint:
+    Condition: isPrivate
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      VpcId: !Ref vpcid
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.execute-api
+      PrivateDnsEnabled: true
+      SubnetIds: !Ref subnetid
+      SecurityGroupIds: !Ref securitygroupid
+
+  apiGatewayMockGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      ResourceId:
+        Fn::GetAtt: apiGateway.RootResourceId
+      RestApiId:
+        Ref: apiGateway
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: '200'
+      Integration:
+        RequestTemplates:
+          application/json: |
+            {"statusCode": 200}
+        Type: MOCK
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: |
+                { 
+                  "statusCode": 200
+                }
+            StatusCode: '200'
+
+  apiGatewayDeployment:
+    Type: "AWS::ApiGateway::Deployment"
+    DependsOn:
+      - 'apiGatewayMockGetMethod'
+    Properties:
+      RestApiId: !Ref "apiGateway"
+      StageName: !Ref "apiGatewayStageName"
+
+Outputs:
+  apiGatewayInvokeURL:
+    Value: !Sub "https://${apiGateway}.execute-api.${AWS::Region}.amazonaws.com/${apiGatewayStageName}/"
+
+  apiGatewayId:
+    Value: !Ref apiGateway
