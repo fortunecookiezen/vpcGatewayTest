@@ -29,10 +29,61 @@ Parameters:
     Type: "String"
     AllowedPattern: "^[a-z0-9]+$"
     Default: "echo"
+  apiType:
+    Type: String
+    Description: "Type of api gateway to deploy: (regional|private)"
+    AllowedValues:
+      - REGIONAL
+      - PRIVATE
   lambdaFunctionName:
     Type: "String"
     AllowedPattern: "^[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+$"
     Default: "vpc-echo"
+  deployEndpoint:
+    Type: String
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: "deploy private service endpoint in vpc?"
+  vpcid:
+    Type: AWS::EC2::VPC::Id
+    Description: 'required, used when deployEndpoint = "true"'
+  subnetid:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: 'private subnets, required. used when deployEndpoint = "true"'
+  securitygroupid:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: 'required, used when deployEndpoint = "true"'
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - 
+      Label:
+        default: "Environment Configuration"
+      Parameters:
+        - ASI
+        - Environment
+        - Owner
+    -
+      Label:
+        default: "api configuration"
+      Parameters:
+        - apiGatewayStageName
+        - apiType
+        - deployEndpoint
+        - lambdaFunctionName
+    -
+      Label: 
+        default: "Network Configuration"
+      Parameters:
+        - vpcid
+        - subnetid
+        - securitygroupid
+
+Conditions:
+  deployEndpoint:
+    !Equals [!Ref deployEndpoint, "true"]
 
 Resources:
   apiGateway:
@@ -42,7 +93,7 @@ Resources:
       Description: "VPC echo API"
       EndpointConfiguration:
         Types:
-          - PRIVATE
+          - !Ref apiType
       Policy:
         Version: 2012-10-17
         Statement:
@@ -103,6 +154,18 @@ Resources:
     Properties:
       RestApiId: !Ref "apiGateway"
       StageName: !Ref "apiGatewayStageName"
+
+# endpoint
+  ApiServiceEndpoint:
+    Condition: deployEndpoint
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      VpcId: !Ref vpcid
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.execute-api
+      PrivateDnsEnabled: true
+      SubnetIds: !Ref subnetid
+      SecurityGroupIds: !Ref securitygroupid
 
 # Lambda from here on down
   lambdaFunction:
